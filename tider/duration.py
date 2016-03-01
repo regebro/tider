@@ -1,3 +1,4 @@
+from __future__ import division
 import math
 
 from ._utils import _cmp, _cmperror
@@ -21,8 +22,6 @@ class Duration(object):
         # guide the C implementation; it's way more convoluted than speed-
         # ignoring auto-overflow-to-long idiomatic Python could be.
 
-        # XXX Check that all inputs are ints or floats.
-
         # Final values, all integer.
         # s and us fit in 32-bit signed ints; d isn't bounded.
         d = s = us = 0
@@ -36,70 +35,63 @@ class Duration(object):
         # Take a deep breath <wink>.
         if isinstance(days, float):
             dayfrac, days = math.modf(days)
-            daysecondsfrac, daysecondswhole = math.modf(dayfrac * (24.*3600.))
-            assert daysecondswhole == int(daysecondswhole)  # can't overflow
+            daysecondsfrac, daysecondswhole = math.modf(dayfrac * 86400)
             s = int(daysecondswhole)
-            assert days == int(days)
             d = int(days)
-        else:
+        elif isinstance(days, int):
             daysecondsfrac = 0.0
             d = days
-        assert isinstance(daysecondsfrac, float)
-        assert abs(daysecondsfrac) <= 1.0
-        assert isinstance(d, int)
-        assert abs(s) <= 24 * 3600
+        else:
+            raise ValueError('The "days" argument must be int or float.')
         # days isn't referenced again before redefinition
 
         if isinstance(seconds, float):
             secondsfrac, seconds = math.modf(seconds)
-            assert seconds == int(seconds)
             seconds = int(seconds)
             secondsfrac += daysecondsfrac
-            assert abs(secondsfrac) <= 2.0
-        else:
+        elif isinstance(seconds, int):
             secondsfrac = daysecondsfrac
+        else:
+            raise ValueError('The "seconds" argument must be int or float.')
         # daysecondsfrac isn't referenced again
-        assert isinstance(secondsfrac, float)
-        assert abs(secondsfrac) <= 2.0
 
-        assert isinstance(seconds, int)
-        days, seconds = divmod(seconds, 24*3600)
+        days, seconds = divmod(seconds, 86400)
         d += days
-        s += int(seconds)    # can't overflow
-        assert isinstance(s, int)
-        assert abs(s) <= 2 * 24 * 3600
+        s += seconds
         # seconds isn't referenced again before redefinition
 
-        usdouble = secondsfrac * 1e6
-        assert abs(usdouble) < 2.1e6    # exact value not critical
+        us = secondsfrac * 1e6
         # secondsfrac isn't referenced again
 
         if isinstance(microseconds, float):
-            microseconds = round(microseconds + usdouble)
+            microseconds = round(microseconds + us)
             seconds, microseconds = divmod(microseconds, 1000000)
-            days, seconds = divmod(seconds, 24*3600)
+            # On Python 2, divmod returns whole number floats for the quotient
+            # if the argument is a float, so we force seconds to be an int:
+            days, seconds = divmod(int(seconds), 86400)
             d += days
             s += seconds
-        else:
+        elif isinstance(microseconds, int):
             microseconds = int(microseconds)
             seconds, microseconds = divmod(microseconds, 1000000)
-            days, seconds = divmod(seconds, 24*3600)
+            days, seconds = divmod(seconds, 86400)
             d += days
             s += seconds
-            microseconds = round(microseconds + usdouble)
-        assert isinstance(s, int)
-        assert isinstance(microseconds, int)
-        assert abs(s) <= 3 * 24 * 3600
-        assert abs(microseconds) < 3.1e6
+            microseconds = round(microseconds + us)
+        else:
+            raise ValueError('The "microseconds" argument must be int or float.')
 
         # Just a little bit of carrying possible for microseconds and seconds.
+        #if not isinstance(microseconds, int):
+            #import pdb;pdb.set_trace()
         seconds, us = divmod(microseconds, 1000000)
-        s += seconds
-        days, s = divmod(s, 24*3600)
+        s += int(seconds)
+        days, s = divmod(s, 86400)
         d += days
 
+        # Finally assert that we didn't mess upp somewhere:
         assert isinstance(d, int)
-        assert isinstance(s, int) and 0 <= s < 24*3600
+        assert isinstance(s, int) and 0 <= s < 86400
         assert isinstance(us, int) and 0 <= us < 1000000
 
         if abs(d) > 999999999:
@@ -211,7 +203,7 @@ class Duration(object):
     __rmul__ = __mul__
 
     def _to_microseconds(self):
-        return ((self._days * (24 * 3600) + self._seconds) * 1000000 +
+        return ((self._days * 86400 + self._seconds) * 1000000 +
                 self._microseconds)
 
     def __floordiv__(self, other):

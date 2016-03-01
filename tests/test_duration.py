@@ -300,6 +300,7 @@ class TestDuration(tests.HarmlessMixedComparison, unittest.TestCase):
         self.assertEqual(Duration.resolution, Duration(0, 0, 1))
 
     def test_overflow(self):
+        # Why the arbitrary duration restrictions?
         tiny = Duration.resolution
 
         d = Duration.min + tiny
