@@ -92,9 +92,6 @@ class Duration(object):
         assert isinstance(s, int) and 0 <= s < 86400
         assert isinstance(us, int) and 0 <= us < 1000000
 
-        if abs(d) > 999999999:
-            raise OverflowError("Duration # of days is too large: %d" % d)
-
         self = object.__new__(cls)
         self._days = d
         self._seconds = s
@@ -124,10 +121,18 @@ class Duration(object):
             s = s + ".%06d" % self._microseconds
         return s
 
+    def total_days(self):
+        """Total days in the duration as float."""
+        return self.total_microseconds() / 86400000000
+
     def total_seconds(self):
-        """Total seconds in the duration."""
-        return ((self.days * 86400 + self.seconds) * 10**6 +
-                self.microseconds) / 10**6
+        """Total seconds in the duration as float."""
+        return self.total_microseconds() / 1000000
+
+    def total_microseconds(self):
+        """Total microseconds in the duration."""
+        return ((self.days * 86400 + self.seconds) * 1000000 +
+                self.microseconds)
 
     # Read-only field accessors
     @property
@@ -291,8 +296,4 @@ class Duration(object):
         return (self.__class__, self._getstate())
 
 
-# Why is there even max and mins? We can handle sys.maxsize.
-Duration.min = Duration(-999999999)
-Duration.max = Duration(days=999999999, hours=23, minutes=59, seconds=59,
-                        microseconds=999999)
 Duration.resolution = Duration(microseconds=1)

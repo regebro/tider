@@ -289,40 +289,29 @@ class TestDuration(tests.HarmlessMixedComparison, unittest.TestCase):
             d2 = Duration(d.days, d.seconds, d.microseconds)
             self.assertEqual(d, d2)
 
-    def test_resolution_info(self):
-        self.assertIsInstance(Duration.min, Duration)
-        self.assertIsInstance(Duration.max, Duration)
-        self.assertIsInstance(Duration.resolution, Duration)
-        self.assertTrue(Duration.max > Duration.min)
-        self.assertEqual(Duration.min, Duration(-999999999))
-        self.assertEqual(Duration.max, Duration(999999999, 24*3600-1, 1e6-1))
-        self.assertEqual(Duration.resolution, Duration(0, 0, 1))
-
-    def test_overflow(self):
-        # Why the arbitrary duration restrictions?
+    def test_accuracy(self):
         tiny = Duration.resolution
+        # Make sure we can make a Duration that uses Long:
+        m = Duration(2**65, seconds=1234, microseconds=567890)
 
-        d = Duration.min + tiny
-        d -= tiny  # no problem
-        self.assertRaises(OverflowError, d.__sub__, tiny)
-        self.assertRaises(OverflowError, d.__add__, -tiny)
+        # The total_microseconds() can give as accuracy:
+        self.assertEqual(m.total_microseconds(),
+                         3187597375937010519246034567890)
 
-        d = Duration.max - tiny
-        d += tiny  # no problem
-        self.assertRaises(OverflowError, d.__add__, tiny)
-        self.assertRaises(OverflowError, d.__sub__, -tiny)
+        # Float can handle this many days:
+        self.assertEqual(m.days,
+                         int(m.total_days()))
+        # Float does not have the accuracy for the seconds in this case:
+        self.assertEqual(m.total_microseconds() -
+                         int(m.total_seconds() * 1000000),
+                         1234567890)
+        self.assertEqual(m.total_microseconds() -
+                         int(m.total_days() * 86400000000),
+                         1234567890)
 
-        self.assertRaises(OverflowError, lambda: -Duration.max)
-
-        day = Duration(1)
-        self.assertRaises(OverflowError, day.__mul__, 10**9)
-        self.assertRaises(OverflowError, day.__mul__, 1e9)
-        self.assertRaises(OverflowError, day.__truediv__, 1e-20)
-        self.assertRaises(OverflowError, day.__truediv__, 1e-10)
-        self.assertRaises(OverflowError, day.__truediv__, 9e-10)
 
     @tests.requires_IEEE_754
-    def _test_overflow_special(self):
+    def test_overflow_special(self):
         day = Duration(1)
         self.assertRaises(OverflowError, day.__mul__, INF)
         self.assertRaises(OverflowError, day.__mul__, -INF)
