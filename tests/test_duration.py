@@ -92,7 +92,7 @@ class TestDuration(tests.HarmlessMixedComparison, unittest.TestCase):
         eq((-3*us) * 0.5, -2*us)
         eq((-5*us) * 0.5, -2*us)
 
-        # Issue #23521
+        # See http://bugs.python.org/review/23521
         eq(Duration(seconds=1) * 0.123456, Duration(microseconds=123456))
         eq(Duration(seconds=1) * 0.6112295, Duration(microseconds=611230))
 
@@ -110,11 +110,11 @@ class TestDuration(tests.HarmlessMixedComparison, unittest.TestCase):
         for i in range(-10, 10):
             eq((i*us/-3)//us, round(i/-3))
 
-        # Issue #23521
+        # See http://bugs.python.org/review/23521
         eq(Duration(seconds=1) / (1 / 0.6112295),
            Duration(microseconds=611230))
 
-        # Issue #11576
+        # http://bugs.python.org/review/11576
         eq(Duration(999999999, 86399, 999999) -
            Duration(999999999, 86399, 999998),
            Duration(0, 0, 1))
@@ -309,7 +309,6 @@ class TestDuration(tests.HarmlessMixedComparison, unittest.TestCase):
                          int(m.total_days() * 86400000000),
                          1234567890)
 
-
     @tests.requires_IEEE_754
     def test_overflow_special(self):
         day = Duration(1)
@@ -342,7 +341,7 @@ class TestDuration(tests.HarmlessMixedComparison, unittest.TestCase):
         eq(Duration(days=-.4/us_per_day, hours=-.2/us_per_hour),
            Duration(microseconds=-1))
 
-        # Test for a patch in Issue 8860
+        # See http://bugs.python.org/review/8860
         eq(Duration(microseconds=0.5),
            0.5*Duration(microseconds=1.0))
         eq(Duration(microseconds=0.5)//Duration.resolution,
