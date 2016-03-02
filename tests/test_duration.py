@@ -5,7 +5,6 @@ import tider  # Must be imported for eval to work in the roundtrip test.
 from operator import truediv, floordiv, mod, mul
 from tider import Duration
 
-
 NAN = float("nan")
 INF = float("inf")
 

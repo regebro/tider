@@ -82,8 +82,6 @@ class Duration(object):
             raise ValueError('The "microseconds" argument must be int or float.')
 
         # Just a little bit of carrying possible for microseconds and seconds.
-        #if not isinstance(microseconds, int):
-            #import pdb;pdb.set_trace()
         seconds, us = divmod(microseconds, 1000000)
         s += int(seconds)
         days, s = divmod(s, 86400)
@@ -286,7 +284,6 @@ class Duration(object):
                 self._microseconds != 0)
 
     # Pickle support.
-
     def _getstate(self):
         return (self._days, self._seconds, self._microseconds)
 
@@ -294,6 +291,7 @@ class Duration(object):
         return (self.__class__, self._getstate())
 
 
+# Why is there even max and mins? We can handle sys.maxsize.
 Duration.min = Duration(-999999999)
 Duration.max = Duration(days=999999999, hours=23, minutes=59, seconds=59,
                         microseconds=999999)

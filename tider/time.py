@@ -3,7 +3,6 @@ import time as _time  # TODO: Move all things from time into tider
 from .duration import Duration
 from ._utils import _check_int_field
 from ._utils import _cmp, _cmperror
-from .timezone import Timezone
 
 
 def _check_time_fields(hour, minute, second, microsecond):
