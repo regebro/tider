@@ -6,12 +6,12 @@ from ._utils import _wrap_strftime, _check_date_fields, _isoweek1monday
 from ._utils import _MAXORDINAL, _DAYNAMES, _MONTHNAMES
 
 
-class Date:
-    """Concrete Date type.
+class BaseDate:
+    """Base for concrete Date types.
 
     Constructors:
 
-    __new__()
+    __init__()
     fromtimestamp()
     today()
     fromordinal()
@@ -40,17 +40,12 @@ class Date:
 
         Arguments:
 
-        year, month, day (required, base 1)
+        year, month, day
         """
-        if (isinstance(year, bytes) and len(year) == 4 and
-            1 <= year[2] <= 12 and month is None):  # Month is sane
-            # Pickle support
-            self.__setstate(year)
-        else:
-            _check_date_fields(year, month, day)
-            self._year = year
-            self._month = month
-            self._day = day
+        _check_date_fields(year, month, day)
+        self._year = year
+        self._month = month
+        self._day = day
 
     # Additional constructors
 
@@ -81,13 +76,9 @@ class Date:
     def __repr__(self):
         """Convert to formal string, for repr().
 
-        >>> dt = Datetime(2010, 1, 1)
+        >>> dt = Basedate(2010, 1, 1)
         >>> repr(dt)
-        'Datetime.Datetime(2010, 1, 1, 0, 0)'
-
-        >>> dt = Datetime(2010, 1, 1, tzinfo=timezone.utc)
-        >>> repr(dt)
-        'Datetime.Datetime(2010, 1, 1, 0, 0, tzinfo=Datetime.timezone.utc)'
+        'tider.Basedate(2010, 1, 1)'
         """
         return "%s(%d, %d, %d)" % ('Datetime.' + self.__class__.__name__,
                                    self._year,
@@ -169,42 +160,42 @@ class Date:
         if day is None:
             day = self._day
         _check_date_fields(year, month, day)
-        return Date(year, month, day)
+        return self.__class__(year, month, day)
 
     # Comparisons of Date objects with other.
 
     def __eq__(self, other):
-        if isinstance(other, Date):
+        if isinstance(other, BaseDate):
             return self._cmp(other) == 0
         return NotImplemented
 
     def __ne__(self, other):
-        if isinstance(other, Date):
+        if isinstance(other, BaseDate):
             return self._cmp(other) != 0
         return NotImplemented
 
     def __le__(self, other):
-        if isinstance(other, Date):
+        if isinstance(other, BaseDate):
             return self._cmp(other) <= 0
         return NotImplemented
 
     def __lt__(self, other):
-        if isinstance(other, Date):
+        if isinstance(other, BaseDate):
             return self._cmp(other) < 0
         return NotImplemented
 
     def __ge__(self, other):
-        if isinstance(other, Date):
+        if isinstance(other, BaseDate):
             return self._cmp(other) >= 0
         return NotImplemented
 
     def __gt__(self, other):
-        if isinstance(other, Date):
+        if isinstance(other, BaseDate):
             return self._cmp(other) > 0
         return NotImplemented
 
     def _cmp(self, other):
-        assert isinstance(other, Date)
+        assert isinstance(other, BaseDate)
         this = self._year, self._month, self._day
         other = other._year, other._month, other._day
         return _cmp(this, other)
@@ -216,21 +207,21 @@ class Date:
     # Computations
 
     def __add__(self, other):
-        "Add a Date to a Duration."
+        "Add a BaseDate to a Duration."
         if isinstance(other, Duration):
             o = self.toordinal() + other.days
             if 0 < o <= _MAXORDINAL:
-                return Date.fromordinal(o)
+                return BaseDate.fromordinal(o)
             raise OverflowError("result out of range")
         return NotImplemented
 
     __radd__ = __add__
 
     def __sub__(self, other):
-        """Subtract two dates, or a Date and a Duration."""
+        """Subtract two dates, or a BaseDate and a Duration."""
         if isinstance(other, Duration):
             return self + Duration(-other.days)
-        if isinstance(other, Date):
+        if isinstance(other, BaseDate):
             days1 = self.toordinal()
             days2 = other.toordinal()
             return Duration(days1 - days2)
@@ -277,19 +268,18 @@ class Date:
     # Pickle support.
 
     def _getstate(self):
-        yhi, ylo = divmod(self._year, 256)
-        return bytes([yhi, ylo, self._month, self._day]),
+        return self._year, self._month, self._day
 
     def __setstate(self, string):
-        if len(string) != 4 or not (1 <= string[2] <= 12):
-            raise TypeError("not enough arguments")
-        yhi, ylo, self._month, self._day = string
-        self._year = yhi * 256 + ylo
+        import pdb;pdb.set_trace()
+        self._year, self._month, self._day = string
 
     def __reduce__(self):
         return (self.__class__, self._getstate())
 
-_date_class = Date  # so functions w/ args named "Date" can get at the class
 
-Date.resolution = Duration(days=1)
+BaseDate.resolution = Duration(days=1)
 
+# For the time, let's use just Gregorian Astronomical dates. That's wrong,
+# but the best way of implementing other dates takes thinking.
+Date = BaseDate

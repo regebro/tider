@@ -3,15 +3,17 @@ import tests
 import time
 import unittest
 
-from tider import Date, Duration, Datetime
+from tider import Duration, Datetime
 from tider._utils import _ymd2ord, _ord2ymd, MINYEAR, MAXYEAR
+
+from tider.date import BaseDate
 
 pickle_choices = [(pickle, pickle, proto)
                   for proto in range(pickle.HIGHEST_PROTOCOL + 1)]
 assert len(pickle_choices) == pickle.HIGHEST_PROTOCOL + 1
 
 
-class SubclassDate(Date):
+class SubclassDate(BaseDate):
     sub_var = 1
 
 # An arbitrary collection of objects of non-datetime types, for testing
@@ -23,7 +25,7 @@ class TestDate(tests.HarmlessMixedComparison, unittest.TestCase):
     # Tests here should pass for both dates and datetimes, except for a
     # few tests that TestDateTime overrides.
 
-    theclass = Date
+    theclass = BaseDate
 
     def test_basic_attributes(self):
         dt = self.theclass(2002, 3, 1)
@@ -34,7 +36,7 @@ class TestDate(tests.HarmlessMixedComparison, unittest.TestCase):
     def test_roundtrip(self):
         for dt in (self.theclass(1, 2, 3),
                    self.theclass.today()):
-            # Verify dt -> string -> Date identity.
+            # Verify dt -> string -> BaseDate identity.
             s = repr(dt)
             self.assertTrue(s.startswith('Datetime.'))
             s = s[9:]
@@ -557,36 +559,9 @@ class TestDate(tests.HarmlessMixedComparison, unittest.TestCase):
         self.assertEqual(dt2.newmeth(-7), dt1.year + dt1.month - 7)
 
     def test_pickling_subclass_date(self):
-
         args = 6, 7, 23
         orig = SubclassDate(*args)
         for pickler, unpickler, proto in pickle_choices:
             green = pickler.dumps(orig, proto)
             derived = unpickler.loads(green)
             self.assertEqual(orig, derived)
-
-    def test_backdoor_resistance(self):
-        # For fast unpickling, the constructor accepts a pickle byte string.
-        # This is a low-overhead backdoor.  A user can (by intent or
-        # mistake) pass a string directly, which (if it's the right length)
-        # will get treated like a pickle, and bypass the normal sanity
-        # checks in the constructor.  This can create insane objects.
-        # The constructor doesn't want to burn the time to validate all
-        # fields, but does check the month field.  This stops, e.g.,
-        # Datetime.Datetime('1995-03-25') from yielding an insane object.
-        base = b'1995-03-25'
-        if not issubclass(self.theclass, Datetime):
-            base = base[:4]
-        for month_byte in b'9', b'\0', b'\r', b'\xff':
-            self.assertRaises(TypeError, self.theclass,
-                                         base[:2] + month_byte + base[3:])
-        # Good bytes, but bad tzinfo:
-        self.assertRaises(TypeError, self.theclass,
-                          bytes([1] * len(base)), 'EST')
-
-        for ord_byte in range(1, 13):
-            # This shouldn't blow up because of the month byte alone.  If
-            # the implementation changes to do more-careful checking, it may
-            # blow up because other fields are insane.
-            self.theclass(base[:2] + bytes([ord_byte]) + base[3:])
-
