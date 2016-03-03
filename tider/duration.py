@@ -295,5 +295,4 @@ class Duration(object):
     def __reduce__(self):
         return (self.__class__, self._getstate())
 
-
 Duration.resolution = Duration(microseconds=1)

@@ -1,5 +1,6 @@
 import pickle
 import tests
+import time
 import unittest
 
 from tider import Date, Duration, Datetime
@@ -90,31 +91,6 @@ class TestDate(tests.HarmlessMixedComparison, unittest.TestCase):
                     self.assertEqual(d.toordinal(), n)
                     self.assertEqual(d, self.theclass.fromordinal(n))
                     n += 1
-
-    #def test_extreme_ordinals(self):
-        #a = self.theclass.min
-        #a = self.theclass(a.year, a.month, a.day)  # get rid of time parts
-        #aord = a.toordinal()
-        #b = a.fromordinal(aord)
-        #self.assertEqual(a, b)
-
-        #self.assertRaises(ValueError, lambda: a.fromordinal(aord - 1))
-
-        #b = a + Duration(days=1)
-        #self.assertEqual(b.toordinal(), aord + 1)
-        #self.assertEqual(b, self.theclass.fromordinal(aord + 1))
-
-        #a = self.theclass.max
-        #a = self.theclass(a.year, a.month, a.day)  # get rid of time parts
-        #aord = a.toordinal()
-        #b = a.fromordinal(aord)
-        #self.assertEqual(a, b)
-
-        #self.assertRaises(ValueError, lambda: a.fromordinal(aord + 1))
-
-        #b = a - Duration(days=1)
-        #self.assertEqual(b.toordinal(), aord - 1)
-        #self.assertEqual(b, self.theclass.fromordinal(aord - 1))
 
     def test_bad_constructor_arguments(self):
         # bad years
@@ -213,23 +189,7 @@ class TestDate(tests.HarmlessMixedComparison, unittest.TestCase):
         # Date + Date is senseless
         self.assertRaises(TypeError, lambda: a + a)
 
-    #def test_overflow(self):
-        #tiny = self.theclass.resolution
-
-        #for delta in [tiny, Duration(1), Duration(2)]:
-            #dt = self.theclass.min + delta
-            #dt -= delta  # no problem
-            #self.assertRaises(OverflowError, dt.__sub__, delta)
-            #self.assertRaises(OverflowError, dt.__add__, -delta)
-
-            #dt = self.theclass.max - delta
-            #dt += delta  # no problem
-            #self.assertRaises(OverflowError, dt.__add__, delta)
-            #self.assertRaises(OverflowError, dt.__sub__, -delta)
-
     def test_fromtimestamp(self):
-        import time
-
         # Try an arbitrary fixed value.
         year, month, day = 1999, 9, 19
         ts = time.mktime((year, month, day, 0, 0, 0, 0, 0, -1))
@@ -248,7 +208,6 @@ class TestDate(tests.HarmlessMixedComparison, unittest.TestCase):
                               insane)
 
     def test_today(self):
-        import time
 
         # We claim that today() is like fromtimestamp(time.time()), so
         # prove it.
@@ -408,26 +367,8 @@ class TestDate(tests.HarmlessMixedComparison, unittest.TestCase):
             self.assertEqual(a.__format__(fmt), dt.strftime(fmt))
             self.assertEqual(b.__format__(fmt), 'B')
 
-    #def test_resolution_info(self):
-        ## XXX: Should min and max respect subclassing?
-        #if issubclass(self.theclass, Datetime):
-            #expected_class = Datetime
-        #else:
-            #expected_class = Date
-        #self.assertIsInstance(self.theclass.min, expected_class)
-        #self.assertIsInstance(self.theclass.max, expected_class)
-        #self.assertIsInstance(self.theclass.resolution, Duration)
-        #self.assertTrue(self.theclass.max > self.theclass.min)
-
-    #def test_extreme_timedelta(self):
-        #big = self.theclass.max - self.theclass.min
-        ## 3652058 days, 23 hours, 59 minutes, 59 seconds, 999999 microseconds
-        #n = (big.days*24*3600 + big.seconds)*1000000 + big.microseconds
-        ## n == 315537897599999999 ~= 2**58.13
-        #justasbig = Duration(0, 0, n)
-        #self.assertEqual(big, justasbig)
-        #self.assertEqual(self.theclass.min + big, self.theclass.max)
-        #self.assertEqual(self.theclass.max - big, self.theclass.min)
+    def test_resolution_info(self):
+        self.assertIsInstance(self.theclass.resolution, Duration)
 
     def test_timetuple(self):
         for i in range(7):
@@ -552,10 +493,9 @@ class TestDate(tests.HarmlessMixedComparison, unittest.TestCase):
         self.assertEqual(our < their, True)
         self.assertEqual(their < our, False)
 
-    #def test_bool(self):
-        ## All dates are considered true.
-        #self.assertTrue(self.theclass.min)
-        #self.assertTrue(self.theclass.max)
+    def test_bool(self):
+        # All dates are considered true.
+        self.assertTrue(self.theclass(1010, 10, 10))
 
     def test_strftime_y2k(self):
         for y in (1, 49, 70, 99, 100, 999, 1000, 1970):

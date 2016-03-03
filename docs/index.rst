@@ -71,3 +71,9 @@ Changes from datetime
   you can't make these tests unless you also have a date.
 
 * The Date object is no longer restricts to years between 1 and 9999.
+
+  In fact there are currently no min/max restrictions at all, which means
+  that thanks to Python's int/long unification the only restriction are
+  memory issues. However, because that would not be true for a C-implementation
+  restrictions may be reintroduced to make the Python implementation keep
+  compatibility with the C implementation.
