@@ -536,12 +536,11 @@ class TestDate(tests.HarmlessMixedComparison, unittest.TestCase):
         class C(self.theclass):
             theAnswer = 42
 
-            def __new__(cls, *args, **kws):
+            def __init__(self, *args, **kws):
                 temp = kws.copy()
                 extra = temp.pop('extra')
-                result = self.theclass.__new__(cls, *args, **temp)
-                result.extra = extra
-                return result
+                self.__class__.__bases__[0].__init__(self, *args, **temp)
+                self.extra = extra
 
             def newmeth(self, start):
                 return start + self.year + self.month

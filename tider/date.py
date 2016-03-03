@@ -35,7 +35,7 @@ class Date:
     """
     __slots__ = '_year', '_month', '_day'
 
-    def __new__(cls, year, month=None, day=None):
+    def __init__(self, year, month=None, day=None):
         """Constructor.
 
         Arguments:
@@ -45,15 +45,12 @@ class Date:
         if (isinstance(year, bytes) and len(year) == 4 and
             1 <= year[2] <= 12 and month is None):  # Month is sane
             # Pickle support
-            self = object.__new__(cls)
             self.__setstate(year)
-            return self
-        _check_date_fields(year, month, day)
-        self = object.__new__(cls)
-        self._year = year
-        self._month = month
-        self._day = day
-        return self
+        else:
+            _check_date_fields(year, month, day)
+            self._year = year
+            self._month = month
+            self._day = day
 
     # Additional constructors
 
